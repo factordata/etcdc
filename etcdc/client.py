@@ -16,7 +16,14 @@ class Client(object):
 
     def __init__(self, address='localhost', port='4001'):
         self.url = 'http://{}:{}'.format(address, port)
-        self.version = requests.get(self.url + '/version').content
+        self._version = None
+
+    @property
+    def version(self):
+        if self._version:
+            return self._version
+        self._version = requests.get(self.url + '/version').content
+        return self._version
 
     def get_keys(self, key='/', recursive=False):
         qparam = '?recursive=true' if recursive else ''
