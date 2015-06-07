@@ -19,7 +19,7 @@ class KeyRequester(object):
         r = getattr(requests, method)(url)
         if r.status_code == 404:
             if r.headers['content-type'] == 'text/plain':
-                raise errors.UrlNotFount()
+                raise errors.UrlNotFound()
             raise KeyError(key)
         if r.status_code != 200:
             raise errors.HTTPError(response=r)

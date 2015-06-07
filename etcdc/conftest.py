@@ -1,4 +1,5 @@
 import pytest
+from mock import Mock
 
 
 @pytest.fixture
@@ -41,3 +42,11 @@ def recursive_directory():
         'modifiedIndex': 1,
         'nodes': [flat_directory(), node()]
     }
+
+
+@pytest.fixture
+def response():
+    resp = Mock()
+    resp.status_code = 200
+    resp.headers = {'content-type': 'application/json'}
+    return resp
