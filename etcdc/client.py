@@ -32,20 +32,19 @@ class Client(object):
     def ls(self, key='/', recursive=False):
         j = self.requester.get(key, recursive=recursive)
         node = j['node']
-        if 'dir' not in node:
-            return Node(node)
-        return Directory(node)
+        if 'dir' in node:
+            return Directory(node)
+        return Node(node)
 
     def get(self, key):
         j = self.requester.get(key)
         node = j['node']
         if 'dir' in node:
-            raise errors.KeyOfDirectory(key)
+            raise errors.NotAFile(key)
         return Node(node)
 
-    def set(self, key, data=None):
-        if data and 'value' not in data:
-            data = None
+    def set(self, key, value=None):
+        data = {'value': value, 'dir': False}
         j = self.requester.put(key, data=data)
         node = j['node']
         prev_node = j.get('prevNode', None)

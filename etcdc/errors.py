@@ -1,34 +1,38 @@
 class EtcdcException(Exception):
-    pass
+    message = 'Etcdc general exception'
+
+    def __str__(self):
+        return self.message
 
 
 class BadKey(EtcdcException):
     message = 'Key must start with a "/"'
 
 
-class KeyOfDirectory(BadKey):
-    message = 'Key must be of a single node, not directory'
+class NotAFile(BadKey):
+    message = 'Key must be of a single node, not a directory'
 
     def __init__(self, key, *args, **kwargs):
-        super(KeyOfDirectory, self).__init__(*args, **kwargs)
+        super(NotAFile, self).__init__(*args, **kwargs)
+        self.key = key
+
+
+class NotADirectory(BadKey):
+    message = 'Path must be of a directory'
+
+    def __init__(self, key, *args, **kwargs):
+        super(NotADirectory, self).__init__(*args, **kwargs)
         self.key = key
 
 
 class UrlNotFound(EtcdcException):
-    pass
-
-
-class BadResponse(EtcdcException):
-    message = 'Response content cannot be converted to Json'
-
-    def __init__(self, content, *args, **kwargs):
-        super(BadResponse, self).__init__(*args, **kwargs)
-        self.content = content
+    message = 'Bad URL'
 
 
 class HTTPError(EtcdcException):
 
-    def __init__(self, response, *args, **kwargs):
+    def __init__(self, response, message, *args, **kwargs):
         super(HTTPError, self).__init__(*args, **kwargs)
         self.status_code = response.status_code
         self.reason = response.reason
+        self.message = message

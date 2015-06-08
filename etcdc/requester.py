@@ -12,29 +12,30 @@ class KeyRequester(object):
     def check_for_errors(cls, key, response, data):
         status_code = response.status_code
         headers = response.headers
-        if status_code != 200:
+
+        if status_code / 100 != 2:
+            try:
+                json = response.json()
+            except ValueError:
+                json = None
             if status_code == 404:
                 if headers['content-type'] == 'text/plain':
                     raise errors.UrlNotFound()
                 raise KeyError(key)
-            if status_code == 403 and data and data.get('dir', False):
-                cause = response.json()['cause']
-                raise errors.KeyOfDirectory(cause)
-            raise errors.HTTPError(response=response)
+            if json and status_code == 400:
+                raise errors.NotADirectory(key)
+            if json and status_code == 403:
+                raise errors.NotAFile(key)
+            raise errors.HTTPError(response=response, message=response.content)
 
     def _send(self, key, method, recursive=False, data=None):
         if not key.startswith('/'):
             raise errors.BadKey()
-        data = {} or data
-        if recursive:
-            data = {'recursive': True}
-        url = self.base_url + key
+        qparam = '?recursive=true' if recursive else ''
+        url = self.base_url + key + qparam
         response = getattr(requests, method)(url, data=data)
         self.check_for_errors(key, response, data)
-        try:
-            return response.json()
-        except Exception:
-            raise errors.BadResponse(response.content)
+        return response.json()
 
     def get(self, key, recursive=False):
         return self._send(key, 'get', recursive)

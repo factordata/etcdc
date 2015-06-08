@@ -105,12 +105,12 @@ def test_get_raises_an_error_if_directory():
     requester = Mock()
     requester.get = Mock(side_effect=get_response)
     client = Client(requester=requester)
-    with pytest.raises(errors.KeyOfDirectory):
+    with pytest.raises(errors.NotAFile):
         client.get('/k')
 
 
 @pytest.mark.parametrize('method,kwargs', [
-    ('get', {}), ('set', {'data': {'value': 1}})
+    ('get', {}), ('set', {'value': 1})
 ])
 def test_returns_a_node(method, kwargs):
     requester = Mock()
@@ -125,7 +125,7 @@ def test_update_key_returns_a_node_with_prev_node():
     requester = Mock()
     requester.put.side_effect = get_response
     client = Client(requester=requester)
-    node = client.set('/update_key', data={'value': 1})
+    node = client.set('/update_key', value=1)
     assert 'key_val' == node.value
     assert 'old_key_val' == node.prev_node.value
 
@@ -135,5 +135,5 @@ def test_set_without_value_key_sends_none():
     requester.put.side_effect = get_response
     client = Client(requester=requester)
     key = '/update_key'
-    client.set(key, data={'val': 1})
-    requester.put.assert_called_with(key, data=None)
+    client.set(key)
+    requester.put.assert_called_with(key, data={'value': None, 'dir': False})
