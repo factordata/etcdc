@@ -15,15 +15,19 @@ def test_key_must_start_with_slash():
         KR.get('bad_key')
 
 
-def test_404(response):
+@pytest.mark.parametrize('method,kwargs', [
+    ('get', {}),
+    ('put', {'data': {'value': 1}})
+])
+def test_404(method, kwargs, response):
     response.status_code = 404
     response.headers = {'content-type': 'text/plain'}
-    REQUESTS_MOCK.get.return_value = response
+    getattr(REQUESTS_MOCK, method).return_value = response
     with pytest.raises(errors.UrlNotFound):
-        KR.get('/key')
+        getattr(KR, method)('/key', **kwargs)
 
 
-def test_key_error(response):
+def test_get_key_error(response):
     response.status_code = 404
     response.json = Mock(return_value={
         u'cause': u'/ppccc',
@@ -37,26 +41,46 @@ def test_key_error(response):
     assert '/non_existing' == excinfo.value.message
 
 
-def test_response_returns_json(response):
-    j = {'action': 'get', 'blah': 1}
+def test_put_can_be_called_with_no_data(response):
+    j = {'action': 'set', 'blah': 1}
     response.json = Mock(return_value=j)
-    REQUESTS_MOCK.get.return_value = response
-    assert KR.get('/key') == j
+    REQUESTS_MOCK.put.return_value = response
+    assert j == KR.put('/key')
     response.json.assert_called_with()
 
 
-def test_response_raises_error_if_status_is_not_200(response):
+@pytest.mark.parametrize('method,kwargs', [
+    ('get', {}),
+    ('put', {'data': {'value': 1}})
+])
+def test_response_returns_json(method, kwargs, response):
+    j = {'action': 'foo', 'blah': 1}
+    response.json = Mock(return_value=j)
+    getattr(REQUESTS_MOCK, method).return_value = response
+    assert j == getattr(KR, method)('/key', **kwargs)
+    response.json.assert_called_with()
+
+
+@pytest.mark.parametrize('method,kwargs', [
+    ('get', {}),
+    ('put', {'data': {'value': 1}})
+])
+def test_response_raises_error_if_status_is_not_200(method, kwargs, response):
     response.status_code = 500
     response.reason = 'to believe'
-    REQUESTS_MOCK.get.return_value = response
+    getattr(REQUESTS_MOCK, method).return_value = response
     with pytest.raises(errors.HTTPError) as excinfo:
-        KR.get('/key')
+        getattr(KR, method)('/key', **kwargs)
     assert excinfo.value.status_code == 500
     assert excinfo.value.reason == 'to believe'
 
 
-def test_response_with_no_json_raises_error(response):
-    response.json = Mock(side_effect=IOError)
-    REQUESTS_MOCK.get.return_value = response
+@pytest.mark.parametrize('method,kwargs', [
+    ('get', {}),
+    ('put', {'data': {'value': 1}})
+])
+def test_response_with_bad_json_raises_error(method, kwargs, response):
+    response.json = Mock(side_effect=Exception)
+    getattr(REQUESTS_MOCK, method).return_value = response
     with pytest.raises(errors.BadResponse):
-        KR.get('/key')
+        getattr(KR, method)('/key', **kwargs)

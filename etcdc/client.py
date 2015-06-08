@@ -42,3 +42,6 @@ class Client(object):
         if 'dir' in node:
             raise errors.KeyOfDirectory()
         return Node(node)
+
+    def set(self, key, data=None):
+        pass

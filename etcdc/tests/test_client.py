@@ -28,14 +28,32 @@ def get_response(key, recursive=False):
             ]
         }
     }
-    if 'single_key' in key:
+    if 'update_key' in key:
         j = {
-            u'action': u'get',
+            u'action': u'set',
+            u'node': {
+                u'createdIndex': 8,
+                u'key': u'/p3',
+                u'modifiedIndex': 8,
+                u'value': u'key_val'
+
+            },
+            u'prevNode': {
+                u'createdIndex': 7,
+                u'key': u'/p3',
+                u'modifiedIndex': 7,
+                u'value': u'old_key_val'
+            }
+        }
+
+    elif 'get' in key or 'set' in key:
+        j = {
+            u'action': u'get' if 'get' in key else u'set',
             u'node': {
                 u'createdIndex': 24,
-                u'key': u'/single_key',
+                u'key': u'{}'.format(key),
                 u'modifiedIndex': 24,
-                u'value': u'single_key_value'
+                u'value': u'key_val'
             }
         }
     elif recursive:
@@ -59,8 +77,8 @@ def get_response(key, recursive=False):
 @pytest.mark.parametrize('key,recursive,expected', [
     ('/', False, ['/k', '/d']),
     ('/', True, ['/k', '/k/k', '/d/d', '/d']),
-    ('/single_key', False, ['/single_key']),
-    ('/single_key', True, ['/single_key']),
+    ('/get_key', False, ['/get_key']),
+    ('/get_key', True, ['/get_key']),
 ])
 def test_get_keys(key, recursive, expected):
     requester = Mock()
@@ -83,16 +101,32 @@ def test_version():
         requests.get.assert_called_with(client.url + '/version')
 
 
-def test_get_returns_a_node():
-    requester = Mock()
-    requester.get = Mock(side_effect=get_response)
-    client = Client(requester=requester)
-    assert 'single_key_value' == client.get('/single_key').value
-
-
 def test_get_raises_an_error_if_directory():
     requester = Mock()
     requester.get = Mock(side_effect=get_response)
     client = Client(requester=requester)
     with pytest.raises(errors.KeyOfDirectory):
         client.get('/k')
+
+
+@pytest.mark.parametrize('method,kwargs', [
+    ('get', {}), ('set', {'value': 1})
+])
+def test_returns_a_node(method):
+    requester = Mock()
+    setattr(requester, method, Mock(side_effect=get_response))
+    client = Client(requester=requester)
+    assert 'key_val' == getattr(client, method)('/{}_key'.format(method)).value
+
+
+def test_update_key_returns_a_node_with_prev_node():
+    requester = Mock()
+    requester.put = Mock(return_value=get_response)
+    client = Client(requester=requester)
+    node = client.set('/update_key', data={'value'})
+    assert 'key_val' == node.value
+    assert 'old_key_val' == node.prev_node.value
+
+
+def test_set_without_value_key_sends_none():
+    pass

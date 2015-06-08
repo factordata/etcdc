@@ -13,6 +13,13 @@ def node():
 
 
 @pytest.fixture
+def prev_node():
+    p_node = node()
+    p_node['value'] = 'new_value'
+    return p_node
+
+
+@pytest.fixture
 def directory():
     return {
         'dir': True,

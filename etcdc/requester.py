@@ -11,12 +11,12 @@ class KeyRequester(object):
     def check_for_errors(self, response):
         pass
 
-    def _send(self, key, method, recursive, data=None):
+    def _send(self, key, method, recursive=False, data=None):
         if not key.startswith('/'):
             raise errors.BadKey()
         qparam = '?recursive=true' if recursive else ''
         url = self.base_url + key + qparam
-        r = getattr(requests, method)(url)
+        r = getattr(requests, method)(url, data=data)
         if r.status_code == 404:
             if r.headers['content-type'] == 'text/plain':
                 raise errors.UrlNotFound()
@@ -31,8 +31,8 @@ class KeyRequester(object):
     def get(self, key, recursive=False):
         return self._send(key, 'get', recursive)
 
-    def put(self):
-        pass
+    def put(self, key, data=None):
+        return self._send(key, 'put', data=data)
 
     def post(self):
         pass
