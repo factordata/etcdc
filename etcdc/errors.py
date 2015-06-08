@@ -9,6 +9,10 @@ class BadKey(EtcdcException):
 class KeyOfDirectory(BadKey):
     message = 'Key must be of a single node, not directory'
 
+    def __init__(self, key, *args, **kwargs):
+        super(KeyOfDirectory, self).__init__(*args, **kwargs)
+        self.key = key
+
 
 class UrlNotFound(EtcdcException):
     pass

@@ -40,7 +40,7 @@ class Client(object):
         j = self.requester.get(key)
         node = j['node']
         if 'dir' in node:
-            raise errors.KeyOfDirectory()
+            raise errors.KeyOfDirectory(key)
         return Node(node)
 
     def set(self, key, data=None):

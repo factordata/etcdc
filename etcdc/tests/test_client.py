@@ -137,15 +137,3 @@ def test_set_without_value_key_sends_none():
     key = '/update_key'
     client.set(key, data={'val': 1})
     requester.put.assert_called_with(key, data=None)
-
-
-def test_set_raises_error_if_not_a_file():
-    '''
-    Maybe this should be tested in the requester
-    In [6]: r2.content
-    Out[6]: '{"errorCode":102,"message":"Not a file","cause":"/pablo","index":13}\n'
-
-    In [7]: r2.status_code
-    Out[7]: 403
-    '''
-    pass

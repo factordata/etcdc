@@ -15,6 +15,10 @@ def test_key_must_start_with_slash():
         KR.get('bad_key')
 
 
+def test_base_url():
+    assert KeyRequester('http://b').base_url == 'http://b/v2/keys'
+
+
 @pytest.mark.parametrize('method,kwargs', [
     ('get', {}),
     ('put', {'data': {'value': 1}})
@@ -37,8 +41,30 @@ def test_get_key_error(response):
     })
     REQUESTS_MOCK.get.return_value = response
     with pytest.raises(KeyError) as excinfo:
-        KR.get('/non_existing')
+        KR.get('/non_existing', recursive=True)
     assert '/non_existing' == excinfo.value.message
+
+
+def test_put_raises_error_if_key_of_dir_and_dir_eq_false(response):
+    key = '/some_key'
+    response.status_code = 403
+    response.json = Mock(return_value={
+        u'cause': key,
+        u'errorCode': 102,
+        u'index': 13,
+        u'message': u'Not a file'
+    })
+    REQUESTS_MOCK.put.return_value = response
+    with pytest.raises(errors.KeyOfDirectory) as excinfo:
+        KR.put(key, data={'dir': True})
+    assert key == excinfo.value.key
+
+
+def test_put_raises_http_error_if_403_and_dir_eq_false(response):
+    response.status_code = 403
+    REQUESTS_MOCK.put.return_value = response
+    with pytest.raises(errors.HTTPError):
+        KR.put('/blah')
 
 
 def test_put_can_be_called_with_no_data(response):
