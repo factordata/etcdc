@@ -44,4 +44,9 @@ class Client(object):
         return Node(node)
 
     def set(self, key, data=None):
-        pass
+        if data and 'value' not in data:
+            data = None
+        j = self.requester.put(key, data=data)
+        node = j['node']
+        prev_node = j.get('prevNode', None)
+        return Node(node, prev_node)

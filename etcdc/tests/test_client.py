@@ -7,7 +7,7 @@ from etcdc.client import Client
 # pylint:disable=invalid-name
 
 
-def get_response(key, recursive=False):
+def get_response(key, recursive=False, data=None):
     j = {
         u'action': u'get',
         u'node': {
@@ -110,23 +110,42 @@ def test_get_raises_an_error_if_directory():
 
 
 @pytest.mark.parametrize('method,kwargs', [
-    ('get', {}), ('set', {'value': 1})
+    ('get', {}), ('set', {'data': {'value': 1}})
 ])
-def test_returns_a_node(method):
+def test_returns_a_node(method, kwargs):
     requester = Mock()
-    setattr(requester, method, Mock(side_effect=get_response))
+    attr_name = 'put' if method == 'set' else method
+    getattr(requester, attr_name).side_effect = get_response
     client = Client(requester=requester)
-    assert 'key_val' == getattr(client, method)('/{}_key'.format(method)).value
+    key = '/{}_key'.format(method)
+    assert 'key_val' == getattr(client, method)(key, **kwargs).value
 
 
 def test_update_key_returns_a_node_with_prev_node():
     requester = Mock()
-    requester.put = Mock(return_value=get_response)
+    requester.put.side_effect = get_response
     client = Client(requester=requester)
-    node = client.set('/update_key', data={'value'})
+    node = client.set('/update_key', data={'value': 1})
     assert 'key_val' == node.value
     assert 'old_key_val' == node.prev_node.value
 
 
 def test_set_without_value_key_sends_none():
+    requester = Mock()
+    requester.put.side_effect = get_response
+    client = Client(requester=requester)
+    key = '/update_key'
+    client.set(key, data={'val': 1})
+    requester.put.assert_called_with(key, data=None)
+
+
+def test_set_raises_error_if_not_a_file():
+    '''
+    Maybe this should be tested in the requester
+    In [6]: r2.content
+    Out[6]: '{"errorCode":102,"message":"Not a file","cause":"/pablo","index":13}\n'
+
+    In [7]: r2.status_code
+    Out[7]: 403
+    '''
     pass
