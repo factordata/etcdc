@@ -2,6 +2,7 @@ import pytest
 from mock import Mock, patch
 
 from etcdc import errors
+from etcdc.directory import Node, Directory
 from etcdc.client import Client
 
 # pylint:disable=invalid-name
@@ -28,7 +29,17 @@ def get_response(key, recursive=False, data=None):
             ]
         }
     }
-    if 'update_key' in key:
+    if 'key_dir' in key:
+        j = {
+            u'action': u'set',
+            u'node': {
+                u'createdIndex': 30,
+                u'dir': True,
+                u'key': u'{}'.format(key),
+                u'modifiedIndex': 30
+            }
+        }
+    elif 'update_key' in key:
         j = {
             u'action': u'set',
             u'node': {
@@ -118,7 +129,9 @@ def test_returns_a_node(method, kwargs):
     getattr(requester, attr_name).side_effect = get_response
     client = Client(requester=requester)
     key = '/{}_key'.format(method)
-    assert 'key_val' == getattr(client, method)(key, **kwargs).value
+    node = getattr(client, method)(key, **kwargs)
+    assert isinstance(node, Node)
+    assert 'key_val' == node.value
 
 
 def test_update_key_returns_a_node_with_prev_node():
@@ -137,3 +150,27 @@ def test_set_without_value_key_sends_none():
     key = '/update_key'
     client.set(key)
     requester.put.assert_called_with(key, data={'value': None, 'dir': False})
+
+
+def test_mkdir_returns_a_dir():
+    requester = Mock()
+    requester.put.side_effect = get_response
+    client = Client(requester=requester)
+    directory = client.mkdir('/key_dir')
+    assert isinstance(directory, Directory)
+    assert '/key_dir' == directory.key
+
+
+@patch('etcdc.requester.requests')
+def test_mkdir_raises_error_if_already_exists(requests, response):
+    j = {
+        u'cause': u'/somedir',
+        u'errorCode': 105,
+        u'index': 30,
+        u'message': u'Key already exists'
+    }
+    response.json = Mock(return_value=j)
+    response.status_code = 412
+    requests.put.return_value = response
+    with pytest.raises(errors.KeyAlreadyExists):
+        Client().mkdir('/somedir')

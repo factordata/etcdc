@@ -8,21 +8,21 @@ class EtcdcException(Exception):
 class BadKey(EtcdcException):
     message = 'Key must start with a "/"'
 
+    def __init__(self, key, *args, **kwargs):
+        super(BadKey, self).__init__(*args, **kwargs)
+        self.key = key
+
 
 class NotAFile(BadKey):
     message = 'Key must be of a single node, not a directory'
-
-    def __init__(self, key, *args, **kwargs):
-        super(NotAFile, self).__init__(*args, **kwargs)
-        self.key = key
 
 
 class NotADirectory(BadKey):
     message = 'Path must be of a directory'
 
-    def __init__(self, key, *args, **kwargs):
-        super(NotADirectory, self).__init__(*args, **kwargs)
-        self.key = key
+
+class KeyAlreadyExists(BadKey):
+    message = 'Key already exists'
 
 
 class UrlNotFound(EtcdcException):

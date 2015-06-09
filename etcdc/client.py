@@ -49,3 +49,7 @@ class Client(object):
         node = j['node']
         prev_node = j.get('prevNode', None)
         return Node(node, prev_node)
+
+    def mkdir(self, key):
+        j = self.requester.put(key, data={'dir': True, 'prevExist': False})
+        return Directory(j['node'])

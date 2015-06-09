@@ -26,11 +26,13 @@ class KeyRequester(object):
                 raise errors.NotADirectory(key)
             if json and status_code == 403:
                 raise errors.NotAFile(key)
+            if json and status_code == 412:
+                raise errors.KeyAlreadyExists(key)
             raise errors.HTTPError(response=response, message=response.content)
 
     def _send(self, key, method, recursive=False, data=None):
         if not key.startswith('/'):
-            raise errors.BadKey()
+            raise errors.BadKey(key)
         qparam = '?recursive=true' if recursive else ''
         url = self.base_url + key + qparam
         response = getattr(requests, method)(url, data=data)
