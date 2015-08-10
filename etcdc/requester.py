@@ -7,6 +7,7 @@ class KeyRequester(object):
 
     def __init__(self, url):
         self.base_url = url.rstrip('/') + '/v2/keys'
+        self.session = requests.Session()
 
     @classmethod
     def check_for_errors(cls, key, response, data):
@@ -35,7 +36,7 @@ class KeyRequester(object):
             raise errors.BadKey(key)
         qparam = '?recursive=true' if recursive else ''
         url = self.base_url + key + qparam
-        response = getattr(requests, method)(url, data=data)
+        response = getattr(self.session, method)(url, data=data)
         self.check_for_errors(key, response, data)
         return response.json()
 

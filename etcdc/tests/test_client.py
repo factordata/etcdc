@@ -161,8 +161,7 @@ def test_mkdir_returns_a_dir():
     assert '/key_dir' == directory.key
 
 
-@patch('etcdc.requester.requests')
-def test_mkdir_raises_error_if_already_exists(requests, response):
+def test_mkdir_raises_error_if_already_exists(response):
     j = {
         u'cause': u'/somedir',
         u'errorCode': 105,
@@ -171,6 +170,9 @@ def test_mkdir_raises_error_if_already_exists(requests, response):
     }
     response.json = Mock(return_value=j)
     response.status_code = 412
-    requests.put.return_value = response
+    session = Mock()
+    session.put.return_value = response
+    client = Client()
+    client.requester.session = session
     with pytest.raises(errors.KeyAlreadyExists):
-        Client().mkdir('/somedir')
+        client.mkdir('/somedir')
