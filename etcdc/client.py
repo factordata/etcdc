@@ -53,3 +53,7 @@ class Client(object):
     def mkdir(self, key):
         j = self.requester.put(key, data={'dir': True, 'prevExist': False})
         return Directory(j['node'])
+
+    def rm(self, key):
+        self.requester.delete(key)
+

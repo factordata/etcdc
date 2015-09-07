@@ -48,3 +48,6 @@ class KeyRequester(object):
 
     def post(self):
         pass
+
+    def delete(self, key, recursive=False):
+        return self._send(key, 'delete', recursive)
