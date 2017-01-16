@@ -31,8 +31,14 @@ class UrlNotFound(EtcdcException):
 
 class HTTPError(EtcdcException):
 
-    def __init__(self, response, message, *args, **kwargs):
+    def __init__(self, response, message, reason=None, *args, **kwargs):
         super(HTTPError, self).__init__(*args, **kwargs)
         self.status_code = response.status_code
-        self.reason = response.reason
+        self.reason = reason or response.reason
         self.message = message
+
+
+class Timeout(HTTPError):
+
+    def __init__(self, response, message, reason, *args, **kwargs):
+        super(Timeout, self).__init__(response, message, reason, *args, **kwargs)

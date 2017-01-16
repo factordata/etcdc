@@ -10,7 +10,7 @@ class KeyRequester(object):
         self.session = requests.Session()
 
     @classmethod
-    def check_for_errors(cls, key, response, data):
+    def check_for_errors(cls, key, response):
         status_code = response.status_code
         headers = response.headers
 
@@ -23,6 +23,12 @@ class KeyRequester(object):
                 if headers['content-type'] == 'text/plain':
                     raise errors.UrlNotFound()
                 raise KeyError(key)
+            if json and status_code == 300:
+                reason = json.get('cause', 'request timed out')
+                message = json.get('message', 'timeout')
+
+                raise errors.Timeout(
+                    response=response, message=message, reason=reason)
             if json and status_code == 400:
                 raise errors.NotADirectory(key)
             if json and status_code == 403:
@@ -37,7 +43,7 @@ class KeyRequester(object):
         qparam = '?recursive=true' if recursive else ''
         url = self.base_url + key + qparam
         response = getattr(self.session, method)(url, data=data)
-        self.check_for_errors(key, response, data)
+        self.check_for_errors(key, response)
         return response.json()
 
     def get(self, key, recursive=False):

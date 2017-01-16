@@ -31,6 +31,22 @@ def test_404(method, kwargs, response):
         getattr(KR, method)('/key', **kwargs)
 
 
+def test_300_timeout(response):
+    response.status_code = 300
+    response.json = Mock(return_value={
+        u'cause': u'etcdserver: request timed out',
+        u'errorCode': 300,
+        u'index': 0,
+        u'message': u'Raft Internal Error'
+    })
+    KR.session.get.return_value = response
+    with pytest.raises(errors.Timeout) as excinfo:
+        KR.get('/foo')
+
+    assert excinfo.value.message == 'Raft Internal Error'
+    assert excinfo.value.reason == 'etcdserver: request timed out'
+
+
 @pytest.mark.parametrize('status_code', [200, 201, 204])
 def test_2xx_succeeds(status_code, response):
     j = {'action': 'set', 'blah': 1}
@@ -51,7 +67,7 @@ def test_get_key_error(response):
     KR.session.get.return_value = response
     with pytest.raises(KeyError) as excinfo:
         KR.get('/non_existing', recursive=True)
-    assert '/non_existing' == excinfo.value.message
+    assert excinfo.value.message == '/non_existing'
 
 
 def test_put_raises_error_if_not_a_file(response):
