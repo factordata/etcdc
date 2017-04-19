@@ -19,22 +19,29 @@ class KeyRequester(object):
                 json = response.json()
             except ValueError:
                 json = None
+
             if status_code == 404:
                 if headers['content-type'] == 'text/plain':
                     raise errors.UrlNotFound()
                 raise KeyError(key)
-            if json and status_code == 300:
-                reason = json.get('cause', 'request timed out')
-                message = json.get('message', 'timeout')
 
-                raise errors.Timeout(
-                    response=response, message=message, reason=reason)
-            if json and status_code == 400:
-                raise errors.NotADirectory(key)
-            if json and status_code == 403:
-                raise errors.NotAFile(key)
-            if json and status_code == 412:
-                raise errors.KeyAlreadyExists(key)
+            if json:
+
+                error_code = json.get('errorCode', None)
+                reason = json.get('cause', '')
+                if error_code == 300 and 'timed out' in reason:
+                    message = json.get('message', 'timeout')
+
+                    raise errors.Timeout(
+                        response=response, message=message, reason=reason)
+
+                if status_code == 400:
+                    raise errors.NotADirectory(key)
+                if status_code == 403:
+                    raise errors.NotAFile(key)
+                if status_code == 412:
+                    raise errors.KeyAlreadyExists(key)
+
             raise errors.HTTPError(response=response, message=response.content)
 
     def _send(self, key, method, recursive=False, data=None):

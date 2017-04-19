@@ -32,7 +32,7 @@ def test_404(method, kwargs, response):
 
 
 def test_300_timeout(response):
-    response.status_code = 300
+    response.status_code = 500
     response.json = Mock(return_value={
         u'cause': u'etcdserver: request timed out',
         u'errorCode': 300,
