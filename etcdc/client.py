@@ -7,13 +7,10 @@ from etcdc.directory import Node, Directory
 
 class Client(object):
 
-    def __init__(self, address='localhost', port='4001', requester=None):
+    def __init__(self, address='localhost', port='4001', requester=None, timeout=45):
         self.url = 'http://{}:{}'.format(address, port)
         self._version = None
-        if requester:
-            self.requester = requester
-        else:
-            self.requester = KeyRequester(url=self.url)
+        self.requester = requester or KeyRequester(url=self.url, timeout=timeout)
 
     @property
     def version(self):

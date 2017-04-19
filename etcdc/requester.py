@@ -5,9 +5,10 @@ from etcdc import errors
 
 class KeyRequester(object):
 
-    def __init__(self, url):
+    def __init__(self, url, timeout=45):
         self.base_url = url.rstrip('/') + '/v2/keys'
         self.session = requests.Session()
+        self.timeout = timeout
 
     @classmethod
     def check_for_errors(cls, key, response):
@@ -49,7 +50,7 @@ class KeyRequester(object):
             raise errors.BadKey(key)
         qparam = '?recursive=true' if recursive else ''
         url = self.base_url + key + qparam
-        response = getattr(self.session, method)(url, data=data)
+        response = getattr(self.session, method)(url, data=data, timeout=self.timeout)
         self.check_for_errors(key, response)
         return response.json()
 
